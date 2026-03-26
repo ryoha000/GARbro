@@ -392,6 +392,8 @@ NextEntry:
             var alg = GuessCryptAlgorithm (file);
             if (null != alg)
                 return alg;
+            if (!FormatCatalog.Instance.HasParametersRequest)
+                throw new UnknownEncryptionScheme (arcStrings.XP3EncryptedNotice);
             var options = Query<Xp3Options> (arcStrings.XP3EncryptedNotice);
             return options.Scheme;
         }

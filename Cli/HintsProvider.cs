@@ -3,15 +3,19 @@ using System.IO;
 using System.Collections.Generic;
 using System.Web.Script.Serialization;
 using GameRes;
+using GameRes.Formats.KiriKiri;
 
 namespace GARbro.Cli
 {
     public static class HintsProvider
     {
-        public static void ApplyHints(string hintsFile)
+        public static void ApplyHints(string hintsFile, string archivePath)
         {
             if (string.IsNullOrEmpty(hintsFile) || !File.Exists(hintsFile))
+            {
+                DisableInteractiveXp3Queries();
                 return;
+            }
 
             try
             {
@@ -19,24 +23,30 @@ namespace GARbro.Cli
                 var serializer = new JavaScriptSerializer();
                 var hints = serializer.Deserialize<Dictionary<string, object>>(json);
 
-                // Future implementation: inject passwords and game titles into GameRes FormatCatalog
-                // or specific Format classes (e.g. KiriKiri XP3 password lists) depending on the engine.
-                var passwords = new List<string>();
-                if (hints.ContainsKey("passwords") && hints["passwords"] is System.Collections.ArrayList list)
-                {
-                    foreach (var item in list)
-                    {
-                        passwords.Add(item.ToString());
-                    }
-                }
-                
-                string title = hints.ContainsKey("title") ? hints["title"].ToString() : null;
+                string title = null;
+                if (hints != null && hints.ContainsKey("title") && hints["title"] != null)
+                    title = hints["title"].ToString();
 
-                // Currently MVP: just load the file without crashing.
+                if (!string.IsNullOrEmpty(title))
+                    FormatCatalog.Instance.RegisterGameTitle(archivePath, title);
+
+                // CLI is non-interactive. Keep XP3 from prompting for a scheme.
+                DisableInteractiveXp3Queries();
             }
             catch (Exception ex)
             {
                 Console.Error.WriteLine("Warning: Failed to parse hints file: " + ex.Message);
+                DisableInteractiveXp3Queries();
+            }
+        }
+
+        private static void DisableInteractiveXp3Queries()
+        {
+            foreach (var format in FormatCatalog.Instance.ArcFormats)
+            {
+                var xp3 = format as Xp3Opener;
+                if (xp3 != null)
+                    xp3.ForceEncryptionQuery = false;
             }
         }
     }

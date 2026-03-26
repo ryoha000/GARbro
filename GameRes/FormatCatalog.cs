@@ -77,6 +77,7 @@ namespace GameRes
         public string     DataDirectory { get { return m_gamedata_dir.Value; } }
 
         public Exception LastError { get; set; }
+        public bool HasParametersRequest { get { return ParametersRequest != null; } }
 
         public event ParametersRequestEventHandler  ParametersRequest;
 
@@ -326,6 +327,13 @@ namespace GameRes
                     return title;
             }
             return null;
+        }
+
+        public void RegisterGameTitle (string arc_name, string title)
+        {
+            if (string.IsNullOrEmpty (arc_name) || string.IsNullOrEmpty (title))
+                return;
+            m_game_map[Path.GetFileName (arc_name)] = title;
         }
 
         public void DeserializeScheme (Stream input)

@@ -17,6 +17,28 @@ namespace GARbro.Cli
         public const string TIMEOUT = "TIMEOUT";
         public const string INTERNAL_ERROR = "INTERNAL_ERROR";
         public const string REQUIRES_ADDITIONAL_CONTEXT = "REQUIRES_ADDITIONAL_CONTEXT";
+
+        public static bool RequiresAdditionalContext(Exception ex)
+        {
+            for (var current = ex; current != null; current = current.InnerException)
+            {
+                if (current is GameRes.UnknownEncryptionScheme || current is GameRes.InvalidEncryptionScheme)
+                    return true;
+
+                if (current.GetType().Name.IndexOf("Encryption", StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+
+                var message = current.Message ?? string.Empty;
+                if (message.IndexOf("passphrase", StringComparison.OrdinalIgnoreCase) >= 0
+                    || message.IndexOf("key", StringComparison.OrdinalIgnoreCase) >= 0
+                    || message.IndexOf("scheme", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     public static class ResultBuilder

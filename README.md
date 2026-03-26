@@ -54,6 +54,31 @@ GUI Hotkeys
 <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>       Toggle scaling of large images</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>Q</kbd></td><td>       Exit</td></tr>
 </table>
+</table>
+
+CLI (garbro-cli)
+----------------
+
+自動化スクリプトや外部ツール向けに、JSON出力に対応した `garbro-cli` が利用可能です。
+`identify`, `list`, `extract` などのサブコマンドを通じてアーカイブ内のリソースを解析・抽出可能です。
+
+### ビルド方法
+
+標準の Visual Studio ソリューション (`GARbro.sln`) に統合されています。
+
+1. **Visual Studio 2022 を使用する場合:**
+   `GARbro.sln` を開き、`GARbro.Cli` プロジェクトをビルドしてください。
+
+2. **コマンドライン (MSBuild) を使用する場合:**
+   Developer Command Prompt 等を開いて以下を実行します。
+
+   ```bash
+   nuget restore GARbro.sln
+   msbuild Cli\GARbro.Cli.csproj /p:Configuration=Release
+   ```
+   *(※環境によっては `/p:TargetFrameworkVersion=v4.8` 等のターゲットフレームワーク指定が必要です)*
+
+ビルドに成功すると、`bin\Release\garbro-cli.exe` (Debug ビルドの場合は `bin\Debug\garbro-cli.exe`) および必要な DLL が出力されます。
 
 Author
 ------

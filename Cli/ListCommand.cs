@@ -24,6 +24,9 @@ namespace GARbro.Cli
             }
             catch (Exception ex)
             {
+                var rootError = FormatCatalog.Instance.LastError ?? ex;
+                if (ErrorCodes.RequiresAdditionalContext(ex) || ErrorCodes.RequiresAdditionalContext(rootError))
+                    return ResultBuilder.Error("list", options.Input, ErrorCodes.REQUIRES_ADDITIONAL_CONTEXT, "Failed to open archive: " + rootError.Message);
                 return ResultBuilder.Error("list", options.Input, ErrorCodes.ARCHIVE_OPEN_FAILED, "Failed to open archive: " + ex.Message);
             }
 

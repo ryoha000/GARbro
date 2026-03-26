@@ -22,7 +22,7 @@ namespace GARbro.Cli
             try
             {
                 DeserializeGameData();
-                HintsProvider.ApplyHints(options.Hints);
+                HintsProvider.ApplyHints(options.Hints, options.Input);
 
                 object result = null;
                 switch (options.Command)
