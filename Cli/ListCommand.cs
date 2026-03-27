@@ -16,77 +16,77 @@ namespace GARbro.Cli
             if (!File.Exists(options.Input))
                 return ResultBuilder.Error("list", options.Input, ErrorCodes.INPUT_NOT_FOUND, "Input path not found");
 
+            var paginationError = PaginationHelper.Validate("list", options.Input, options.Limit, options.Offset);
+            if (paginationError != null)
+                return paginationError;
+
             var result = ResultBuilder.Success("list", options.Input);
-
-            try
+            Dictionary<string, object> openError;
+            using (var arc = CommandUtilities.TryOpenArchive("list", options.Input, out openError))
             {
-                VFS.ChDir(options.Input);
-            }
-            catch (Exception ex)
-            {
-                var rootError = FormatCatalog.Instance.LastError ?? ex;
-                if (ErrorCodes.RequiresAdditionalContext(ex) || ErrorCodes.RequiresAdditionalContext(rootError))
-                    return ResultBuilder.Error("list", options.Input, ErrorCodes.REQUIRES_ADDITIONAL_CONTEXT, "Failed to open archive: " + rootError.Message);
-                return ResultBuilder.Error("list", options.Input, ErrorCodes.ARCHIVE_OPEN_FAILED, "Failed to open archive: " + ex.Message);
-            }
+                if (arc == null)
+                    return openError;
 
-            var arcFs = VFS.Top as ArchiveFileSystem;
-            if (arcFs == null)
-            {
-                return ResultBuilder.Error("list", options.Input, ErrorCodes.INPUT_NOT_SUPPORTED, "Input is not a supported archive");
-            }
-
-            var arc = arcFs.Source;
-            result["container"] = new Dictionary<string, string> { { "kind", "archive" }, { "format", "Unknown" } };
-
-            IEnumerable<Entry> entries = arc.Dir;
-            
-            // filters
-            if (!string.IsNullOrEmpty(options.Filter))
-            {
-                // Very basic glob (e.g. *.ks)
-                string extFilter = options.Filter.StartsWith("*.") ? options.Filter.Substring(1) : options.Filter;
-                entries = entries.Where(e => e.Name.EndsWith(extFilter, StringComparison.OrdinalIgnoreCase) || e.Name.Contains(extFilter));
-            }
-
-            if (!string.IsNullOrEmpty(options.Type))
-            {
-                entries = entries.Where(e => e.Type.Equals(options.Type, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // sort
-            if (options.Sort == "path") entries = entries.OrderBy(e => e.Name);
-            else if (options.Sort == "type") entries = entries.OrderBy(e => e.Type);
-            else if (options.Sort == "size") entries = entries.OrderBy(e => e.Size);
-
-            // counts
-            int totalMatching = entries.Count();
-
-            // pagination
-            if (options.Offset > 0) entries = entries.Skip(options.Offset);
-            if (options.Limit > 0) entries = entries.Take(options.Limit);
-
-            var entryList = new List<Dictionary<string, object>>();
-            foreach (var e in entries)
-            {
-                entryList.Add(new Dictionary<string, object>
+                result["container"] = new Dictionary<string, object>
                 {
-                    { "path", e.Name },
-                    { "name", Path.GetFileName(e.Name) },
-                    { "type", e.Type },
-                    { "size", e.Size },
-                    { "packed_size", e.Size } // We may properly fetch packed size if exposed
-                });
+                    { "kind", "archive" },
+                    { "format", new Dictionary<string, object>
+                        {
+                            { "tag", arc.Tag },
+                            { "description", arc.Description }
+                        }
+                    }
+                };
+
+                var entries = arc.Dir
+                    .Select(e => new
+                    {
+                        Entry = e,
+                        ClassifiedType = EntryTypeClassifier.Classify(e)
+                    })
+                    .ToList();
+
+                if (!string.IsNullOrEmpty(options.Type))
+                {
+                    entries = entries
+                        .Where(e => e.ClassifiedType.Equals(options.Type, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+
+                if (!string.IsNullOrEmpty(options.Filter))
+                {
+                    string extFilter = options.Filter.StartsWith("*.") ? options.Filter.Substring(1) : options.Filter;
+                    entries = entries
+                        .Where(e => e.Entry.Name.EndsWith(extFilter, StringComparison.OrdinalIgnoreCase)
+                                 || e.Entry.Name.IndexOf(extFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                        .ToList();
+                }
+
+                entries = entries
+                    .OrderBy(e => e.Entry.Name, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                int totalMatching = entries.Count;
+                var page = PaginationHelper.Apply(entries, options.Limit, options.Offset);
+
+                var entryList = page.Select(e => new Dictionary<string, object>
+                {
+                    { "path", e.Entry.Name },
+                    { "name", Path.GetFileName(e.Entry.Name) },
+                    { "type", e.ClassifiedType },
+                    { "size", e.Entry.Size },
+                    { "packed_size", e.Entry.Size }
+                }).ToList();
+
+                result["entries"] = entryList;
+                result["pagination"] = PaginationHelper.CreateMetadata(options.Limit, options.Offset, entryList.Count, totalMatching);
+                result["summary"] = new Dictionary<string, object>
+                {
+                    { "entry_count", entryList.Count },
+                    { "total_matching", totalMatching }
+                };
+                return result;
             }
-
-            result["entries"] = entryList;
-            result["summary"] = new Dictionary<string, object>
-            {
-                { "entry_count", entryList.Count },
-                { "total_matching", totalMatching }
-            };
-
-            return result;
         }
     }
 }

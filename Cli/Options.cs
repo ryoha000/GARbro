@@ -14,15 +14,17 @@ namespace GARbro.Cli
 
         public string Filter { get; set; }
         public string Type { get; set; }
-        public int Limit { get; set; } = 1000;
+        public int Limit { get; set; } = 100;
         public int Offset { get; set; } = 0;
         public string Sort { get; set; }
         public bool Recursive { get; set; }
         public bool Tree { get; set; }
 
+        public string Entry { get; set; }
         public List<string> Entries { get; set; } = new List<string>();
         public string EntryFile { get; set; }
         public string OutDir { get; set; }
+        public string TargetFormat { get; set; }
         public bool Convert { get; set; }
         public string Overwrite { get; set; } = "skip";
         public bool Flatten { get; set; }
@@ -57,9 +59,15 @@ namespace GARbro.Cli
                         case "filter": options.Filter = GetNextArg(args, ref i); break;
                         case "type": options.Type = GetNextArg(args, ref i); break;
                         case "sort": options.Sort = GetNextArg(args, ref i); break;
-                        case "entry": options.Entries.Add(GetNextArg(args, ref i)); break;
+                        case "entry":
+                            var entryValue = GetNextArg(args, ref i);
+                            options.Entry = entryValue;
+                            if (options.Command == "extract")
+                                options.Entries.Add(entryValue);
+                            break;
                         case "entry-file": options.EntryFile = GetNextArg(args, ref i); break;
                         case "out": options.OutDir = GetNextArg(args, ref i); break;
+                        case "to": options.TargetFormat = GetNextArg(args, ref i); break;
                         case "overwrite": options.Overwrite = GetNextArg(args, ref i); break;
                         case "safe-root": options.SafeRoot = GetNextArg(args, ref i); break;
 

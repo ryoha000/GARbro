@@ -36,6 +36,15 @@ namespace GARbro.Cli
                     case "extract":
                         result = ExtractCommand.Execute(options);
                         break;
+                    case "formats":
+                        result = FormatsCommand.Execute(options);
+                        break;
+                    case "probe":
+                        result = ProbeCommand.Execute(options);
+                        break;
+                    case "convert":
+                        result = ConvertCommand.Execute(options);
+                        break;
                     default:
                         Console.Error.WriteLine($"Error: Unknown command '{options.Command}'");
                         PrintUsage();
@@ -87,7 +96,7 @@ namespace GARbro.Cli
         static void PrintUsage()
         {
             Console.WriteLine("garbro-cli <command> [options]");
-            Console.WriteLine("Commands: identify, list, extract");
+            Console.WriteLine("Commands: identify, list, extract, formats, probe, convert");
         }
     }
 }

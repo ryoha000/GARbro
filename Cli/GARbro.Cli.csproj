@@ -76,6 +76,10 @@
     <Compile Include="IdentifyCommand.cs" />
     <Compile Include="ListCommand.cs" />
     <Compile Include="ExtractCommand.cs" />
+    <Compile Include="CommandUtilities.cs" />
+    <Compile Include="FormatsCommand.cs" />
+    <Compile Include="ProbeCommand.cs" />
+    <Compile Include="ConvertCommand.cs" />
     <Compile Include="HintsProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
