@@ -160,9 +160,11 @@ namespace GARbro.Cli
             {
                 return ResultBuilder.Error("convert", options.Input, ErrorCodes.INPUT_NOT_SUPPORTED, "input cannot be converted to the requested format");
             }
-            catch (InvalidFormatException)
+            catch (Exception ex)
             {
-                return ResultBuilder.Error("convert", options.Input, ErrorCodes.INPUT_NOT_SUPPORTED, "input cannot be converted to the requested format");
+                if ("InvalidFormatException".Equals(ex.GetType().Name, StringComparison.Ordinal))
+                    return ResultBuilder.Error("convert", options.Input, ErrorCodes.INPUT_NOT_SUPPORTED, "input cannot be converted to the requested format");
+                throw;
             }
 
             result["result"] = new Dictionary<string, object>
